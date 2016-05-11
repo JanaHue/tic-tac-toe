@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic Tac</title>
+</head>
+<body>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        .board {
+            width: 150px;
+            height: 150px;
+            line-height: 0;
+        }
+        .tile {
+            border: 1px solid grey;
+            width: 50px;
+            height: 50px;
+            background: gainsboro;
+            display: inline-block;
+            position: relative;
+        }
+        .tile p {
+            position: absolute;
+            font-family: sans-serif;
+            line-height: 17px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+
+    <script>
+
+        var boardEl;
+        var winner;
+        var playersTurn = true;
+        var numMoves = 0;
+        var potentialMoves = [];
+        var board = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ];
+
+        var handleMove = function(){
+            var index = this.id.split('-');
+            if (findWinner()) {
+                return;
+            } else if (!playersTurn) {
+                throw 'Wait your turn, buddy!';
+            } else {
+                moveX(index[0], index[1]);
+            }
+        }
+
+        var moveX = function(a, b){
+            if (board[a][b] === 0 ) {
+                board[a][b] = 1;
+            } else {
+                throw 'that spot is full!';
+            }
+            playersTurn = false;
+            renderTiles();
+            window.setTimeout(moveO, 400);
+        }
+
+        var moveO = function(){
+            if (!findWinner()) {
+                if (board[1][1] === 0) {
+                    board[1][1] = -1;
+                } else {
+                    var newPos = selectTile();
+                    if (newPos) {
+                        board[newPos[0]][newPos[1]] = -1;
+                    }
+                }
+                playersTurn = true;
+                renderTiles();
+                potentialMoves = [];
+            }
+        }
+
+        var selectTile = function(){
+            board.forEach(function(row, i){
+                row.forEach(function(tile, j){
+                    if (tile === 0) {
+                        potentialMoves.push([i, j]);
+                    }
+                });
+            });
+            var rand = Math.floor(Math.random() * potentialMoves.length);
+            return potentialMoves[rand];
+        }
+
+        var findWinner = function(){
+            var sumOfDiagA = 0;
+            var sumOfDiagB = 0;
+            var a = 0;
+            var b = board.length - 1;
+
+            //Rows and Columns
+            board.forEach(function(row, i){
+                var sumOfColumn = 0;
+                var sumOfRow = 0;
+                row.forEach(function(tile, j){
+                    sumOfRow += tile;
+                    sumOfColumn += board[j][i];
+                });
+                if (sumOfRow === 3 || sumOfColumn === 3) {
+                    winner = 'x';
+                } else if (sumOfRow === -3 || sumOfColumn === -3) {
+                    winner = 'o';
+                }
+            });
+
+            //Diagonals
+            while (a < board.length && b >= 0) {
+                sumOfDiagA += board[a][a];
+                sumOfDiagB += board[a][b];
+                a++;
+                b--;
+            }
+            if (sumOfDiagA === 3 || sumOfDiagB === 3) {
+                winner = 'x';
+            } else if (sumOfDiagA === -3 || sumOfDiagB === -3) {
+                winner = 'o';
+            }
+
+            if (winner) {
+                declareWinner(winner);
+            }
+        }
+
+        //Rendering Functions
+        var declareWinner = function(winner){
+            var outcome = document.createElement('p');
+            outcome.id = 'outcome';
+            outcome.textContent = 'Game over, ' + winner.toUpperCase() + ' wins!';
+            document.body.insertBefore(outcome, boardEl.nextSibling);
+        }
+
+        var resetGame = function(){
+            numMoves = 0;
+            potentialMoves = [];
+            playersTurn = true;
+            winner = null;
+
+            var outcome = document.getElementById('outcome');
+            document.body.removeChild(outcome);
+
+            board.forEach(function(row, i){
+                row.forEach(function(tile, j){
+                    row[j] = 0;
+                    var currentTile = document.getElementById(i + '-' + j);
+                    while (currentTile.hasChildNodes()){
+                        currentTile.removeChild(currentTile.firstChild);
+                    }
+                });
+            });
+        }
+
+        var initBoard = function(){
+            boardEl = document.createElement('section');
+            boardEl.className = 'board';
+            document.body.appendChild(boardEl);
+
+            board.forEach(function(row, i){
+                row.forEach(function(tile, j){
+                    var tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.id = i + '-' + j;
+                    boardEl.appendChild(tile);
+                });
+            });
+
+            var tileEls = document.getElementsByClassName('tile');
+            Object.keys(tileEls).forEach(function(key) {
+                tileEls[key].addEventListener('click', handleMove);
+            });
+
+            var resetButton = document.createElement('button');
+            resetButton.textContent = "Reset Game";
+            resetButton.addEventListener('click', resetGame);
+            document.body.insertBefore(resetButton, boardEl.nextSibling);
+        }
+
+        var renderTiles = function(){
+            board.forEach(function(row, i) {
+                row.forEach(function(tile, j) {
+                    if (tile != 0) {
+                        var text = tile === 1 ? '<p>X</p>' : '<p>O</p>';
+                        var playedTile = document.getElementById(i + '-' + j);
+                        playedTile.innerHTML = text;
+                    }
+                });
+            });
+
+            return numMoves ++;
+        }
+
+        initBoard();
+
+    </script>
+
+</body>
+</html>
